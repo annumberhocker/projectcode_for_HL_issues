@@ -12,159 +12,65 @@
  * limitations under the License.
  */
 
-rule SellerMakeOrder {
-    description: "Allow Sellers to create and view orders"
-    participant(p): "org.acme.vehicle_network.Seller"
-    operation: CREATE
-    resource(o): "org.acme.vehicle_network.Order"
-    transaction(tx): "org.acme.vehicle_network.PlaceOrder"
-    condition: (o.orderer.getIdentifier() == p.getIdentifier())
-    action: ALLOW
-}
-
-rule SellerPlaceOrder {
-    description: "Allow Sellers to place orders and view they've done this"
-    participant(p): "org.acme.vehicle_network.Seller"
-    operation: CREATE, READ
-    resource(o): "org.acme.vehicle_network.PlaceOrder"
-    condition: (o.orderer.getIdentifier() == p.getIdentifier())
-    action: ALLOW
-}
-/*
-rule SellerReadOrder {
-    description: "Allow Sellers to place orders and view they've done this"
-    participant(p): "org.acme.vehicle_network.Seller"
+/* By commenting this rule out, Composer hangs when a Buyer is requesting to do an UpdateOrder_BuyerNotes Transaction. If this is uncommented, the Buyer has access under his own id. */
+rule BuyerReadOrder {
+    description: "Allow Buyers to place orders and view they've done this"
+    participant(p): "org.example.basic.Buyer"
     operation: READ
-    resource(o): "org.acme.vehicle_network.Order"
-    condition: (o.orderer.getIdentifier() == p.getIdentifier())
-    action: ALLOW
-}
-*/
-// Rules for: Fulfiller Vs Order 
-rule Fulfiller_Asset_Order_in_Tx_UpdateOrder {
-    description: "Allow fulfiller to view and update their own orders"
-    participant(m): "org.acme.vehicle_network.Fulfiller"
-    operation: UPDATE
-    resource(o): "org.acme.vehicle_network.Order"
-    transaction(tx): "org.acme.vehicle_network.UpdateOrderStatus"
-    condition: (o.orderDetails.fulfillCo.getIdentifier() == m.getIdentifier())
+    resource(o): "org.example.basic.Order"
+    condition: (o.buyer.getIdentifier() == p.getIdentifier())
     action: ALLOW
 }
 
-rule Fulfiller_CREATE_READ_Tx_UpdateOrderStatus {
-    description: "Allow fulfiller to update order statuses and view they've done this"
-    participant(m): "org.acme.vehicle_network.Fulfiller"
-    operation: CREATE, READ
-    resource(o): "org.acme.vehicle_network.UpdateOrderStatus"
-    condition: (o.order.orderDetails.fulfillCo.getIdentifier() == m.getIdentifier())
-    action: ALLOW
-}
-/*
-rule Fulfiller_READ_Asset_Order {
-    description: "Allow manufacturers to view and update their own orders"
-    participant(m): "org.acme.vehicle_network.Fulfiller"
-    operation: READ
-    resource(o): "org.acme.vehicle_network.Order"
-    condition: (o.orderDetails.fulfillCo.getIdentifier() == m.getIdentifier())
-    action: ALLOW
-}
-*/
-// Rules for: Fulfiller Vs Shipment 
-rule Fulfiller_CREATE_Shipment_in_Tx_UpdateOrderStatus {
-    description: "Allow manufacturers to create and view their shipment"
-    participant(m): "org.acme.vehicle_network.Fulfiller"
-    operation: CREATE
-    resource(v): "org.acme.vehicle_network.Shipment"
-    transaction(tx): "org.acme.vehicle_network.UpdateOrderStatus"
-    //condition: (v.shipmentDetails.fulfillerCo.getIdentifier() == m.getIdentifier() && tx.orderStatus == "VIN_ASSIGNED")
-    condition: (tx.order.orderDetails.fulfillerCo.getIdentifier() == m.getIdentifier())
-    action: ALLOW
-}
-
-rule Fulfiller_CREATE_Shipment {
-    description: "Allow manufacturers to create and view their vehicles"
-    participant(m): "org.acme.vehicle_network.Fulfiller"
-    operation: CREATE, READ
-    resource(s): "org.acme.vehicle_network.Shipment"
-    condition: (s.shipmentDetails.fulfillCo.getIdentifier() == m.getIdentifier())
-    action: ALLOW
-}
-
-// Rules for: Fulfiller Vs tx_UpdateOrder_FulfillerNotes
-
-rule Fulfiller_UPDATE_notes_tx_UpdateOrder_FulfillerNotes {
+// Rules for: Buyer Vs tx_UpdateOrder_BuyerNotes
+rule Buyer_UPDATE_notes_tx_UpdateOrder_BuyerNotes {
     description: "..."
-    participant(m): "org.acme.vehicle_network.Fulfiller"
-    operation:  UPDATE, READ
-    resource(v): "org.acme.vehicle_network.Order"
-    transaction(tx): "org.acme.vehicle_network.UpdateOrder_FulfillerNotes"
-    condition: (tx.order.orderDetails.fulfillCo.getIdentifier() == m.getIdentifier())
-    action: ALLOW
-} 
- 
-rule Fulfiller_CREATE_tx_UpdateOrder_FulfillerNotes {
-    description: "..."
-    participant(m): "org.acme.vehicle_network.Fulfiller"
-    operation: CREATE
-    resource(r): "org.acme.vehicle_network.UpdateOrder_FulfillerNotes"
-    condition: (r.order.orderDetails.fulfillCo.getIdentifier() == m.getIdentifier())
-    action: ALLOW
-}
- 
-// Rules for: Seller Vs tx_UpdateOrder_SellerNotes
-rule Fulfiller_UPDATE_notes_tx_UpdateOrder_SellerNotes {
-    description: "..."
-    participant(p): "org.acme.vehicle_network.Seller"
+    participant(p): "org.example.basic.Buyer"
     operation: UPDATE, READ
-    resource(v): "org.acme.vehicle_network.Order"
-    transaction(tx): "org.acme.vehicle_network.UpdateOrder_SellerNotes"
-    condition: (tx.order.orderer.getIdentifier() == p.getIdentifier())
+    resource(v): "org.example.basic.Order"
+    transaction(tx): "org.example.basic.UpdateOrder_BuyerNotes"
+    condition: (tx.order.buyer.getIdentifier() == p.getIdentifier())
     action: ALLOW
 }
- 
+
+rule Buyer_CREATE_tx_UpdateOrder_BuyerNotes {
+    description: "..."
+    participant(p): "org.example.basic.Buyer"
+    operation: CREATE
+    resource(r): "org.example.basic.UpdateOrder_BuyerNotes"
+    condition: (r.order.buyer.getIdentifier() == p.getIdentifier())
+    action: ALLOW
+}
+
+rule SellerReadandCreateOrder {
+    description: "Allow Sellers to place orders and view they've done this"
+    participant(p): "org.example.basic.Seller"
+    operation: READ, CREATE
+    resource(o): "org.example.basic.Order"
+    condition: (o.seller.getIdentifier() == p.getIdentifier())
+    action: ALLOW
+}
+
+// Rules for: Seller Vs tx_UpdateOrder_SellerNotes
+rule Seller_UPDATE_notes_tx_UpdateOrder_SellerNotes {
+    description: "..."
+    participant(p): "org.example.basic.Seller"
+    operation: UPDATE, READ
+    resource(v): "org.example.basic.Order"
+    transaction(tx): "org.example.basic.UpdateOrder_SellerNotes"
+    condition: (tx.order.seller.getIdentifier() == p.getIdentifier())
+    action: ALLOW
+}
+
+
 rule Seller_CREATE_tx_UpdateOrder_SellerNotes {
     description: "..."
-    participant(p): "org.acme.vehicle_network.Seller"
+    participant(p): "org.example.basic.Seller"
     operation: CREATE
-    resource(r): "org.acme.vehicle_network.UpdateOrder_FulfillerNotes"
-    condition: (r.order.orderer.getIdentifier() == p.getIdentifier())
+    resource(r): "org.example.basic.UpdateOrder_SellerNotes"
+    condition: (r.order.seller.getIdentifier() == p.getIdentifier())
     action: ALLOW
 }
- 
-
-
-/*
-// Rules for: Fulfiller Vs ShipmentStatus 
-rule Fulfiller_CREATE_Shipment_in_Tx_UpdateShipmentStatus {
-    description: "Allow manufacturers to create and view their shipment"
-    participant(m): "org.acme.vehicle_network.Fulfiller"
-    operation: CREATE
-    resource(v): "org.acme.vehicle_network.Shipment"
-    transaction(tx): "org.acme.vehicle_network.UpdateOrderStatus"
-    //condition: (v.shipmentDetails.fulfillerCo.getIdentifier() == m.getIdentifier() && tx.orderStatus == "VIN_ASSIGNED")
-    condition: (tx.order.orderDetails.fulfillerCo.getIdentifier() == m.getIdentifier())
-    action: ALLOW
-}
-
-rule Fulfiller_CREATE_Shipment {
-    description: "Allow manufacturers to create and view their vehicles"
-    participant(m): "org.acme.vehicle_network.Fulfiller"
-    operation: CREATE, READ
-    resource(s): "org.acme.vehicle_network.Shipment"
-    condition: (s.shipmentDetails.fulfillCo.getIdentifier() == m.getIdentifier())
-    action: ALLOW
-}
-*/
-//  Regulator RULES !
-/*
-rule RegulatorAdminUser {
-    description: "Let the regulator do anything"
-    participant: "org.acme.vehicle_network.Regulator"
-    operation: ALL
-    resource: "**"
-    action: ALLOW
-}
-*/
 
 rule ParticipantsSeeSelves {
     description: "Let participants see themselves"
